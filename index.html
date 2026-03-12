@@ -377,6 +377,7 @@
 const BU_TEMPLATES = {
   primetour: {
     label: 'Primetour',
+    defaultWhatsapp: '551131784890',
     width: 800,
     font: 'Poppins',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
@@ -396,6 +397,7 @@ const BU_TEMPLATES = {
   },
   agencias: {
     label: 'Agências',
+    defaultWhatsapp: '551131784775',
     width: 600,
     font: 'Figtree',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap',
@@ -413,6 +415,7 @@ const BU_TEMPLATES = {
   },
   pts: {
     label: 'PTS (Bradesco Cartões)',
+    defaultWhatsapp: '551131784851',
     width: 600,
     font: 'Red Hat Text',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@300;400;500;600;700&display=swap',
@@ -428,6 +431,7 @@ const BU_TEMPLATES = {
   },
   centurion: {
     label: 'Centurion (Bradesco Amex)',
+    defaultWhatsapp: '551148621500',
     width: 800,
     font: 'Red Hat Text',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@300;400;500;600;700&display=swap',
@@ -449,6 +453,7 @@ const BU_TEMPLATES = {
   },
   partners: {
     label: 'Partners BTG',
+    defaultWhatsapp: '551148621680',
     width: 710,
     font: 'Montserrat',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
@@ -471,6 +476,7 @@ const BU_TEMPLATES = {
   },
   ultrablue: {
     label: 'Ultrablue BTG',
+    defaultWhatsapp: '551148621688',
     width: 600,
     font: 'Montserrat',
     fontUrl: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
@@ -742,6 +748,10 @@ function renderBUConfig() {
             <label>E-mail de contato (fixo)</label>
             <input type="text" value="${bu.email||''}" oninput="updateBU(${i},'email',this.value)" placeholder="Ex: ultrablue@primetour.com.br">
           </div>
+          <div class="field">
+            <label>Número WhatsApp (fixo por BU)</label>
+            <input type="text" value="${bu.whatsapp||''\}" oninput="updateBU(${i},'whatsapp',this.value)" placeholder="Ex: 551131784890">
+          </div>
           <div class="field full">
             <label>Pasta no Content Builder (opcional)</label>
             <input type="text" value="${bu.folder||''}" oninput="updateBU(${i},'folder',this.value)" placeholder="Ex: Newsletters/Ultrablue">
@@ -759,7 +769,7 @@ function renderBUConfig() {
 function toggleBUItem(i) { document.getElementById(`bu-body-${i}`).classList.toggle('open'); }
 function updateBU(i, field, value) { config.bus[i][field] = value; }
 function addBUConfig() {
-  config.bus.push({ name:'', templateKey:'ultrablue', mid:'', clientId:'', clientSecret:'', phone:'', email:'', folder:'', defaultLegal:'' });
+  config.bus.push({ name:'', templateKey:'ultrablue', mid:'', clientId:'', clientSecret:'', phone:'', email:'', whatsapp:'', folder:'', defaultLegal:'' });
   renderBUConfig();
   setTimeout(() => document.getElementById(`bu-body-${config.bus.length-1}`)?.classList.add('open'), 50);
 }
@@ -979,7 +989,15 @@ function setType(id, type) {
   document.getElementById(`btn-dec-${id}`).className='type-btn';
   document.getElementById(`btn-whats-${id}`).className='type-btn';
   if (type==='decorative') { document.getElementById(`btn-dec-${id}`).className='type-btn active-decorative'; badge.className='slice-type-badge badge-decorative'; badge.textContent='Decorativa'; }
-  else if (type==='whatsapp') { document.getElementById(`btn-whats-${id}`).className='type-btn active-whatsapp'; badge.className='slice-type-badge badge-cta-whats'; badge.textContent='CTA WhatsApp'; lf.classList.add('visible'); }
+  else if (type==='whatsapp') {
+    document.getElementById(`btn-whats-${id}`).className='type-btn active-whatsapp'; badge.className='slice-type-badge badge-cta-whats'; badge.textContent='CTA WhatsApp'; lf.classList.add('visible');
+    // Pre-fill whatsapp number from BU config if empty
+    const numField = document.getElementById(`whats-num-${id}`);
+    if (numField && !numField.value) {
+      const tpl = BU_TEMPLATES[currentBU?.templateKey];
+      numField.value = currentBU?.whatsapp || tpl?.defaultWhatsapp || '';
+    }
+  }
   document.querySelector(`.slice-card[data-id="${id}"]`).dataset.type = type;
 }
 
@@ -998,7 +1016,8 @@ function buildSlicesHTML(tpl) {
     if (type==='decorative') {
       html += `  <tr>\n    <td ${tdStyle}>\n      ${imgTag}\n    </td>\n  </tr>\n`;
     } else if (type==='whatsapp') {
-      const num=document.getElementById(`whats-num-${id}`)?.value.trim()||'';
+      const tplW = BU_TEMPLATES[currentBU?.templateKey];
+    const num=(document.getElementById(`whats-num-${id}`)?.value.trim()) || currentBU?.whatsapp || tplW?.defaultWhatsapp || '';
       const msg=document.getElementById(`whats-msg-${id}`)?.value.trim()||'';
       const href=`https://api.whatsapp.com/send?phone=${encodeURIComponent(num)}&text=${encodeURIComponent(msg)}`;
       html += `  <tr>\n    <td ${tdStyle}>\n      <a href="${href}" target="_blank" style="display:block;">${imgTag}</a>\n    </td>\n  </tr>\n`;
