@@ -528,7 +528,7 @@ async function importFromFigma() {
   try {
     // Fetch file via proxy
     const data = await proxyFetch(
-      `https://api.figma.com/v1/files/${fileId}?depth=2`,
+      `https://api.figma.com/v1/files/${fileId}?depth=5`,
       'GET',
       { 'X-Figma-Token': config.figmaToken, 'Content-Type': 'application/json' },
       null
