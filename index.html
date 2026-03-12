@@ -915,8 +915,8 @@ function addSlice(data={}) {
           <input type="text" id="whats-num-${id}" placeholder="5511XXXXXXXXX" value="${data.whatsNum||''}">
         </div>
         <div class="field">
-          <label>Mensagem WhatsApp</label>
-          <input type="text" id="whats-msg-${id}" placeholder="Nome da campanha — Código XXXX" value="${data.whatsMsg||''}">
+          <label>Mensagem WhatsApp <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);">(gerada automaticamente — deixe em branco)</span></label>
+          <input type="text" id="whats-msg-${id}" placeholder="[BU] — [Campanha] — Código [XXX]" value="${data.whatsMsg||''}">
         </div>
       </div>
     </div>`;
@@ -1018,7 +1018,12 @@ function buildSlicesHTML(tpl) {
     } else if (type==='whatsapp') {
       const tplW = BU_TEMPLATES[currentBU?.templateKey];
     const num=(document.getElementById(`whats-num-${id}`)?.value.trim()) || currentBU?.whatsapp || tplW?.defaultWhatsapp || '';
-      const msg=document.getElementById(`whats-msg-${id}`)?.value.trim()||'';
+      const msgCustom = document.getElementById(`whats-msg-${id}`)?.value.trim();
+      const campaignName = document.getElementById('campaign-name').value.trim();
+      const campaignCode = document.getElementById('campaign-code').value.trim();
+      const buName = currentBU?.name || '';
+      const autoMsg = [buName, campaignName, campaignCode ? `Código ${campaignCode}` : ''].filter(Boolean).join(' — ');
+      const msg = msgCustom || autoMsg;
       const href=`https://api.whatsapp.com/send?phone=${encodeURIComponent(num)}&text=${encodeURIComponent(msg)}`;
       html += `  <tr>\n    <td ${tdStyle}>\n      <a href="${href}" target="_blank" style="display:block;">${imgTag}</a>\n    </td>\n  </tr>\n`;
     }
