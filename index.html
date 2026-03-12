@@ -239,6 +239,23 @@
     </div>
 
     <div class="card">
+      <div class="card-title">Importar do Figma <span style="font-size:10px;font-weight:500;color:var(--text-muted);text-transform:none;letter-spacing:0;margin-left:6px;">opcional</span></div>
+      <div class="tip" style="margin-bottom:14px;">
+        💡 Cole o link de compartilhamento do arquivo Figma (<strong>Share → Copy link</strong>). A ferramenta lê os frames nomeados como <code style="background:var(--blue-pale);padding:1px 5px;border-radius:4px;font-size:11px;">fatia-1</code>, <code style="background:#e3f7e8;padding:1px 5px;border-radius:4px;font-size:11px;">fatia-2-whatsapp</code>, etc. e cria as fatias automaticamente.
+      </div>
+      <div class="fields-grid">
+        <div class="field full">
+          <label>Link do arquivo Figma</label>
+          <div class="url-row">
+            <input type="url" id="figma-url" placeholder="https://www.figma.com/design/ABC123/Nome-do-Arquivo">
+            <button class="btn-upload-single" id="btn-figma-import" onclick="importFromFigma()" style="padding:0 18px;font-size:12px;">🎨 Importar</button>
+          </div>
+        </div>
+      </div>
+      <div id="figma-status" style="margin-top:10px;display:none;"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">Fatias da Newsletter</div>
       <div class="tip" style="margin-bottom:14px;">
         💡 Selecione o arquivo JPG de cada fatia e clique em <strong>⬆ Subir</strong> para upload automático no Content Builder. A URL é preenchida automaticamente.
@@ -324,6 +341,17 @@
     <div class="alert alert-info">
       <span class="alert-icon">🔒</span>
       <span>Credenciais salvas <strong>apenas no seu navegador</strong> (localStorage). Cada computador configura uma vez.</span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Figma</div>
+      <div class="tip" style="margin-bottom:14px;">
+        Para usar a importação do Figma, gere um <strong>Personal Access Token</strong> em: Figma → Account Settings → Personal access tokens → Generate new token.
+      </div>
+      <div class="field">
+        <label>Personal Access Token do Figma</label>
+        <input type="password" id="figma-token-input" placeholder="figd_XXXXXXXX..." oninput="config.figmaToken=this.value">
+      </div>
     </div>
 
     <div class="card">
@@ -477,9 +505,121 @@ let dragSrc = null;
 // ═══════════════════════════════
 // INIT
 // ═══════════════════════════════
+// ═══════════════════════════════
+// FIGMA IMPORT
+// ═══════════════════════════════
+function extractFigmaFileId(url) {
+  const m = url.match(/figma\.com\/(?:design|file)\/([A-Za-z0-9]+)/);
+  return m ? m[1] : null;
+}
+
+async function importFromFigma() {
+  if (!config.figmaToken) { alert('Configure o Personal Access Token do Figma na aba Configurações.'); return; }
+  const url = document.getElementById('figma-url').value.trim();
+  if (!url) { alert('Cole o link do arquivo Figma.'); return; }
+  const fileId = extractFigmaFileId(url);
+  if (!fileId) { alert('Link do Figma inválido. Use o link de Share → Copy link.'); return; }
+
+  const btn = document.getElementById('btn-figma-import');
+  const status = document.getElementById('figma-status');
+  btn.innerHTML = '<span class="spinner spinner-blue"></span> Lendo...'; btn.disabled = true;
+  status.style.display = 'none';
+
+  try {
+    // Fetch file via proxy
+    const data = await proxyFetch(
+      `https://api.figma.com/v1/files/${fileId}?depth=2`,
+      'GET',
+      { 'X-Figma-Token': config.figmaToken, 'Content-Type': 'application/json' },
+      null
+    );
+
+    if (data.status === 403 || data.err) throw new Error('Token inválido ou sem acesso ao arquivo.');
+    if (!data.document) throw new Error('Não foi possível ler o arquivo. Verifique o link e o token.');
+
+    // Find all frames named fatia-* across all pages
+    const slices = [];
+    function walk(node) {
+      if (node.type === 'FRAME' && /^fatia-/i.test(node.name)) {
+        const isWhatsapp = /whatsapp/i.test(node.name);
+        slices.push({ id: node.id, name: node.name, type: isWhatsapp ? 'whatsapp' : 'decorative' });
+      }
+      if (node.children) node.children.forEach(walk);
+    }
+    data.document.children.forEach(walk);
+
+    // Sort by name (fatia-1, fatia-2, ...)
+    slices.sort((a,b) => {
+      const na = parseInt(a.name.match(/fatia-(\d+)/i)?.[1]||0);
+      const nb = parseInt(b.name.match(/fatia-(\d+)/i)?.[1]||0);
+      return na - nb;
+    });
+
+    if (!slices.length) throw new Error('Nenhum frame com nome fatia-* encontrado. Verifique a nomenclatura dos frames no Figma.');
+
+    // Now fetch export URLs for each frame
+    status.innerHTML = `<div class="alert alert-info"><span class="alert-icon">🎨</span><span>Encontrados <strong>${slices.length} frames</strong>. Exportando imagens...</span></div>`;
+    status.style.display = 'block';
+
+    const ids = slices.map(s => s.id).join(',');
+    const exportData = await proxyFetch(
+      `https://api.figma.com/v1/images/${fileId}?ids=${encodeURIComponent(ids)}&format=jpg&scale=2`,
+      'GET',
+      { 'X-Figma-Token': config.figmaToken, 'Content-Type': 'application/json' },
+      null
+    );
+
+    if (exportData.err) throw new Error(`Erro ao exportar imagens: ${exportData.err}`);
+
+    // Clear existing slices and create new ones from Figma data
+    document.getElementById('slices-container').innerHTML = '';
+    sliceCount = 0;
+
+    for (const slice of slices) {
+      const imgUrl = exportData.images?.[slice.id] || '';
+      // Try to fetch the image as blob for upload
+      let blobFile = null;
+      try {
+        const imgResp = await fetch(imgUrl);
+        const blob = await imgResp.blob();
+        blobFile = new File([blob], `${slice.name}.jpg`, { type: 'image/jpeg' });
+      } catch(e) { /* will leave file empty, user can upload manually */ }
+
+      addSlice({ type: slice.type, figmaImgUrl: imgUrl });
+
+      // If we got the blob, attach it to the upload input
+      if (blobFile) {
+        const lastId = sliceCount;
+        const fi = document.querySelector(`#upload-zone-${lastId} input`);
+        if (fi) {
+          // Simulate file selection
+          fi.__file = blobFile;
+          const objUrl = URL.createObjectURL(blobFile);
+          document.getElementById(`upload-preview-${lastId}`).innerHTML = `<div class="upload-preview"><img src="${objUrl}" alt="preview"><div class="upload-preview-info"><div class="upload-preview-name">${slice.name}.jpg</div><div class="upload-preview-size">${(blobFile.size/1024).toFixed(0)} KB</div></div><button class="btn-clear-file" onclick="clearFile(${lastId})">✕</button></div>`;
+          document.getElementById(`upload-preview-${lastId}`).style.display = 'block';
+          document.getElementById(`upload-zone-${lastId}`).style.display = 'none';
+          document.getElementById(`btn-upload-${lastId}`).disabled = false;
+        }
+      }
+    }
+
+    status.innerHTML = `<div class="alert alert-success"><span class="alert-icon">✅</span><span><strong>${slices.length} fatias importadas</strong> do Figma com sucesso! Clique em ⬆ Subir todas as fatias para fazer o upload no SFMC.</span></div>`;
+    status.style.display = 'block';
+
+  } catch(e) {
+    status.innerHTML = `<div class="alert alert-danger"><span class="alert-icon">❌</span><span>${e.message}</span></div>`;
+    status.style.display = 'block';
+  } finally {
+    btn.innerHTML = '🎨 Importar'; btn.disabled = false;
+  }
+}
+
 function init() {
   const saved = localStorage.getItem('newsletter_gen_config');
   if (saved) { try { config = JSON.parse(saved); } catch(e) {} }
+  // Load figma token field
+  const ft = document.getElementById('figma-token-input');
+  if (ft && config.figmaToken) ft.value = config.figmaToken;
   renderBUConfig();
 }
 
@@ -631,6 +771,7 @@ function removeBU(e, i) {
   renderBUConfig();
 }
 function saveConfig() {
+  config.figmaToken = document.getElementById('figma-token-input')?.value || config.figmaToken || '';
   localStorage.setItem('newsletter_gen_config', JSON.stringify(config));
   const btn = document.querySelector('[onclick="saveConfig()"]');
   btn.textContent = '✔ Salvo!';
@@ -659,7 +800,7 @@ async function proxyFetch(url, method, headers, payload) {
   const resp = await fetch(PROXY_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, method, headers, payload })
+    body: JSON.stringify({ url, method: method||'POST', headers, payload: payload || null })
   });
   if (!resp.ok) throw new Error(`Erro no proxy (${resp.status}): ${await resp.text()}`);
   return resp.json();
