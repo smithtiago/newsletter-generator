@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Newsletter — Ultrablue BTG Pactual</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark: #0d3270;
+    --blue-mid: #10408d;
+    --blue-light: #1a56b0;
+    --blue-pale: #e8eef8;
+    --blue-ghost: #f4f7fc;
+    --gold: #c9a84c;
+    --text: #1a1a2e;
+    --text-muted: #5a6a84;
+    --border: #d0daea;
+    --white: #ffffff;
+    --danger: #c0392b;
+    --danger-light: #fdf0ef;
+    --success: #1a7a4a;
+    --success-light: #edf7f1;
+    --warning: #a06800;
+    --warning-light: #fff8e0;
+    --radius: 10px;
+    --shadow: 0 2px 16px rgba(13,50,112,0.09);
+    --shadow-hover: 0 6px 28px rgba(13,50,112,0.16);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Montserrat', sans-serif; background: var(--blue-ghost); color: var(--text); min-height: 100vh; }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-mid) 60%, var(--blue-light) 100%);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 3px 20px rgba(13,50,112,0.25);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-logo { width: 80px; filter: brightness(0) invert(1); opacity: 0.92; }
+  .header-divider { width: 1px; height: 34px; background: rgba(255,255,255,0.3); }
+  .header-title { color: white; flex: 1; }
+  .header-title h1 { font-size: 16px; font-weight: 700; }
+  .header-title p { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+  .header-bu {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  .header-bu:hover { background: rgba(255,255,255,0.25); }
+  .bu-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; flex-shrink: 0; }
+  .bu-dot.inactive { background: #94a3b8; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    padding: 0 40px;
+    gap: 4px;
+  }
+  .tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--blue-mid); }
+  .tab.active { color: var(--blue-mid); border-bottom-color: var(--blue-mid); }
+
+  /* Container */
+  .container { max-width: 860px; margin: 32px auto; padding: 0 20px 80px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 26px 30px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--blue-mid);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title::before {
+    content: ''; display: block;
+    width: 3px; height: 15px;
+    background: var(--gold); border-radius: 2px;
+  }
+
+  /* Fields */
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); }
+  input[type="text"], input[type="url"], input[type="password"], textarea, select {
+    font-family: 'Montserrat', sans-serif; font-size: 13px;
+    border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 10px 13px; color: var(--text); background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(16,64,141,0.1);
+  }
+
+  /* BU List */
+  .bu-list { display: flex; flex-direction: column; gap: 10px; }
+  .bu-item {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .bu-item-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--blue-ghost);
+    border-bottom: 1.5px solid var(--border);
+    cursor: pointer;
+  }
+  .bu-item-header-left { display: flex; align-items: center; gap: 10px; }
+  .bu-name-badge {
+    background: var(--blue-mid); color: white;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .bu-item-name { font-size: 13px; font-weight: 600; }
+  .bu-item-mid { font-size: 11px; color: var(--text-muted); }
+  .bu-status { font-size: 11px; font-weight: 600; }
+  .bu-status.ok { color: var(--success); }
+  .bu-status.pending { color: var(--warning); }
+  .bu-item-body { padding: 16px; display: none; }
+  .bu-item-body.open { display: block; }
+  .bu-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .bu-fields .full { grid-column: 1 / -1; }
+
+  .btn-remove-bu {
+    background: none; border: none;
+    color: var(--danger); cursor: pointer;
+    font-size: 16px; padding: 2px 6px;
+    border-radius: 5px; transition: background 0.15s;
+  }
+  .btn-remove-bu:hover { background: var(--danger-light); }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600;
+    border: none; border-radius: 8px; padding: 11px 22px;
+    cursor: pointer; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--blue-mid), var(--blue-light)); color: white; box-shadow: 0 3px 12px rgba(16,64,141,0.25); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(16,64,141,0.35); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: var(--white); color: var(--blue-mid); border: 1.5px solid var(--blue-mid); }
+  .btn-secondary:hover { background: var(--blue-pale); }
+  .btn-gold { background: linear-gradient(135deg, #b8902a, var(--gold)); color: white; box-shadow: 0 3px 12px rgba(201,168,76,0.3); }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(201,168,76,0.4); }
+  .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-danger { background: var(--white); color: var(--danger); border: 1.5px solid var(--danger); font-size: 12px; padding: 9px 16px; }
+  .btn-danger:hover { background: var(--danger-light); }
+  .btn-add { background: var(--white); color: var(--blue-mid); border: 1.5px dashed var(--blue-mid); width: 100%; justify-content: center; padding: 13px; border-radius: var(--radius); transition: background 0.2s; }
+  .btn-add:hover { background: var(--blue-ghost); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-test { background: var(--warning-light); color: var(--warning); border: 1.5px solid #e6b800; }
+  .btn-test:hover { background: #fff0b0; }
+
+  /* Actions row */
+  .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+
+  /* Slices */
+  #slices-container { display: flex; flex-direction: column; gap: 12px; }
+  .slice-card { border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--white); transition: box-shadow 0.2s; }
+  .slice-card:hover { box-shadow: var(--shadow-hover); }
+  .slice-header { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; background: var(--blue-ghost); border-bottom: 1.5px solid var(--border); cursor: pointer; user-select: none; }
+  .slice-header-left { display: flex; align-items: center; gap: 9px; }
+  .slice-number { width: 24px; height: 24px; background: var(--blue-mid); color: white; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .slice-label { font-size: 13px; font-weight: 600; }
+  .slice-type-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; padding: 2px 8px; border-radius: 20px; margin-left: 4px; }
+  .badge-decorative { background: var(--blue-pale); color: var(--blue-mid); }
+  .badge-cta-whats { background: #e3f7e8; color: #1a7a4a; }
+  .badge-cta-email { background: #fff4e0; color: #a06800; }
+  .slice-upload-status { font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .status-uploaded { color: var(--success); }
+  .status-uploading { color: var(--blue-mid); }
+  .status-error { color: var(--danger); }
+  .slice-header-right { display: flex; align-items: center; gap: 6px; }
+  .btn-remove-slice { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 17px; line-height: 1; padding: 2px 5px; border-radius: 5px; transition: background 0.15s; }
+  .btn-remove-slice:hover { background: var(--danger-light); }
+  .chevron { color: var(--text-muted); font-size: 13px; transition: transform 0.2s; }
+  .slice-card.collapsed .chevron { transform: rotate(-90deg); }
+  .slice-body { padding: 16px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .slice-card.collapsed .slice-body { display: none; }
+  .slice-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .slice-fields .full { grid-column: 1 / -1; }
+  .drag-handle { cursor: grab; color: var(--text-muted); font-size: 15px; padding: 2px 4px; }
+  .drag-handle:active { cursor: grabbing; }
+  .slice-card.dragging { opacity: 0.45; }
+
+  /* Type selector */
+  .type-selector { display: flex; gap: 7px; }
+  .type-btn { flex: 1; padding: 8px 8px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--white); font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.18s; text-align: center; }
+  .type-btn:hover { border-color: var(--blue-mid); color: var(--blue-mid); }
+  .type-btn.active-decorative { border-color: var(--blue-mid); background: var(--blue-pale); color: var(--blue-mid); }
+  .type-btn.active-whatsapp { border-color: #1a7a4a; background: #e3f7e8; color: #1a7a4a; }
+  .type-btn.active-email { border-color: #a06800; background: #fff4e0; color: #a06800; }
+  .link-fields { display: none; }
+  .link-fields.visible { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .link-fields .full { grid-column: 1 / -1; }
+
+  /* File upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--blue-ghost);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover { border-color: var(--blue-mid); background: var(--blue-pale); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-zone-text { font-size: 12px; color: var(--text-muted); pointer-events: none; }
+  .upload-zone-text strong { color: var(--blue-mid); display: block; margin-bottom: 3px; }
+  .upload-preview {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--success-light);
+    border: 1.5px solid #a8dfc0;
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .upload-preview img { width: 48px; height: 32px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+  .upload-preview-info { flex: 1; min-width: 0; }
+  .upload-preview-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .upload-preview-size { font-size: 11px; color: var(--text-muted); }
+  .btn-clear-file { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; flex-shrink: 0; }
+
+  /* URL input with upload button */
+  .url-row { display: flex; gap: 8px; }
+  .url-row input { flex: 1; }
+  .btn-upload-single { background: var(--blue-pale); border: 1.5px solid var(--blue-mid); color: var(--blue-mid); border-radius: 7px; padding: 0 12px; font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.2s; display: flex; align-items: center; gap: 5px; }
+  .btn-upload-single:hover { background: var(--blue-mid); color: white; }
+  .btn-upload-single:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Progress */
+  .progress-bar-wrap { background: var(--border); border-radius: 20px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--blue-mid), var(--blue-light)); border-radius: 20px; transition: width 0.3s; }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: 12px 16px; font-size: 12px; line-height: 1.6; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .alert-info { background: var(--blue-pale); border: 1px solid #b0c8f0; color: var(--blue-dark); }
+  .alert-success { background: var(--success-light); border: 1px solid #a8dfc0; color: var(--success); }
+  .alert-warning { background: var(--warning-light); border: 1px solid #f0d080; color: var(--warning); }
+  .alert-danger { background: var(--danger-light); border: 1px solid #f0b8b0; color: var(--danger); }
+  .alert-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Output */
+  #output-section { display: none; }
+  .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  #html-output { background: #0f1923; color: #a8d4ff; border-radius: var(--radius); padding: 20px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.7; white-space: pre; overflow-x: auto; max-height: 460px; overflow-y: auto; border: 1px solid #1e3050; }
+  .copy-feedback { display: none; color: var(--success); font-size: 12px; font-weight: 600; align-items: center; gap: 5px; }
+  .copy-feedback.show { display: flex; }
+
+  /* BU selector modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,50,112,0.45); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 14px; padding: 28px; width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(13,50,112,0.25); }
+  .modal h2 { font-size: 16px; font-weight: 700; color: var(--blue-dark); margin-bottom: 6px; }
+  .modal p { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+  .bu-option { border: 1.5px solid var(--border); border-radius: 9px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; gap: 12px; }
+  .bu-option:hover { border-color: var(--blue-mid); background: var(--blue-pale); }
+  .bu-option.selected { border-color: var(--blue-mid); background: var(--blue-pale); }
+  .bu-option-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--blue-mid); color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .bu-option-info { flex: 1; }
+  .bu-option-name { font-size: 13px; font-weight: 700; }
+  .bu-option-mid { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .bu-option-check { color: var(--blue-mid); font-size: 18px; display: none; }
+  .bu-option.selected .bu-option-check { display: block; }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .spinner-blue { border-color: rgba(16,64,141,0.2); border-top-color: var(--blue-mid); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Tip */
+  .tip { background: var(--blue-pale); border-left: 3px solid var(--blue-mid); border-radius: 0 7px 7px 0; padding: 10px 14px; font-size: 12px; color: var(--blue-dark); line-height: 1.6; }
+
+  @media (max-width: 600px) {
+    header { padding: 16px; flex-wrap: wrap; }
+    .tabs { padding: 0 16px; overflow-x: auto; }
+    .fields-grid, .slice-fields, .bu-fields, .link-fields.visible { grid-template-columns: 1fr; }
+    .card { padding: 18px; }
+    .type-selector { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BU Selector Modal -->
+<div class="modal-overlay" id="bu-modal">
+  <div class="modal">
+    <h2>Selecionar Business Unit</h2>
+    <p>Escolha a BU para este disparo antes de continuar.</p>
+    <div id="bu-options-list"></div>
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button class="btn btn-primary" onclick="confirmBU()" style="flex:1;">Confirmar</button>
+      <button class="btn btn-secondary" onclick="closeBUModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <img src="https://ftpprime.blob.core.windows.net/btg/btg-logo-azul.png" alt="BTG Pactual" class="header-logo">
+  <div class="header-divider"></div>
+  <div class="header-title">
+    <h1>Gerador de Newsletter</h1>
+    <p>Ultrablue BTG Pactual</p>
+  </div>
+  <button class="header-bu" onclick="openBUModal()" id="header-bu-btn">
+    <span class="bu-dot inactive" id="header-bu-dot"></span>
+    <span id="header-bu-name">Selecionar BU</span>
+    <span style="font-size:10px; opacity:0.7;">▾</span>
+  </button>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('campanha')">📧 Campanha</div>
+  <div class="tab" onclick="switchTab('config')">⚙️ Configurações</div>
+</div>
+
+<div class="container">
+
+  <!-- ══════════════ TAB CAMPANHA ══════════════ -->
+  <div class="page active" id="page-campanha">
+
+    <div id="no-bu-alert" class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <span>Nenhuma BU selecionada. Clique em <strong>Selecionar BU</strong> no topo para escolher a Business Unit antes de montar a campanha.</span>
+    </div>
+
+    <!-- Dados da campanha -->
+    <div class="card">
+      <div class="card-title">Dados da Campanha</div>
+      <div class="fields-grid">
+        <div class="field">
+          <label>Código da campanha</label>
+          <input type="text" id="campaign-code" placeholder="Ex: U0201" oninput="syncFooterCode()">
+        </div>
+        <div class="field">
+          <label>Nome da campanha</label>
+          <input type="text" id="campaign-name" placeholder="Ex: La Dolce Vita Orient Express" oninput="syncFooterCode()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Fatias -->
+    <div class="card">
+      <div class="card-title">Fatias da Newsletter</div>
+      <div class="tip" style="margin-bottom:16px;">
+        💡 Para cada fatia, selecione o arquivo JPG e clique em <strong>⬆ Subir</strong> para fazer o upload automático no Content Builder. A URL será preenchida automaticamente.
+      </div>
+      <div id="slices-container"></div>
+      <button class="btn btn-add" onclick="addSlice()" style="margin-top:12px;">＋ Adicionar fatia</button>
+    </div>
+
+    <!-- Rodapé -->
+    <div class="card">
+      <div class="card-title">Rodapé</div>
+      <div class="tip" style="margin-bottom:16px;">
+        💡 Telefone, e-mail e logo são fixos por BU e vêm das <strong>Configurações</strong>. Só preencha o campo abaixo com o texto legal desta campanha.
+      </div>
+      <div class="fields-grid">
+        <div class="field">
+          <label>Código da campanha no rodapé</label>
+          <input type="text" id="footer-code" placeholder="Preenchido automaticamente" readonly style="background:var(--blue-ghost); cursor:default;">
+        </div>
+        <div class="field">
+          <label>Assunto do mailto (gerado automaticamente)</label>
+          <input type="text" id="footer-mailto-preview" placeholder="Preenchido ao digitar o nome da campanha" readonly style="background:var(--blue-ghost); cursor:default; font-size:11px;">
+        </div>
+        <div class="field full">
+          <label>Texto legal / disclaimer</label>
+          <textarea id="footer-legal" rows="6" placeholder="Cole aqui o texto legal desta campanha...">Imagens meramente ilustrativas. Valores e ofertas checados e válidos na data desta publicação e sujeitos a alterações, disponibilidade de lugares e cancelamentos sem qualquer aviso prévio. Valores e ofertas não se aplicam em feriados nacionais ou internacionais e podem não valer para finais de semana e datas festivas – consulte-nos para esses e outros períodos de blackout dates (quando os valores divulgados podem não ser aplicados) e para mais informações, restrições e reservas. Os valores podem ou não estar sujeitos a incidência de IRRF, IOF e/ou outras taxas nacionais ou internacionais, consulte-nos. O Ultrablue BTG Pactual não se responsabiliza por eventuais mudanças, fechamentos e demais informações dos estabelecimentos e serviços citados nesta comunicação. Os itens mencionados podem ser cancelados, suspensos ou alterados sem aviso prévio e estão sujeitos a disponibilidade, condições climáticas e legislações locais. Novas regras e protocolos de segurança e higienização, com possível limitação do número de visitantes e do acesso a turistas brasileiros, restrições relativas à liberdade de circulação e outras podem estar ou entrar em vigor, sem quaisquer notificações prévias, inclusive durante o período da viagem, de acordo com o que definir a legislação local, e deverão ser seguidas e respeitadas pelos clientes. É expressamente proibida a reprodução total ou parcial deste conteúdo, seja por qualquer meio ou forma de comunicação, sem a prévia autorização por escrito do Ultrablue BTG Pactual.</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="actions">
+      <button class="btn btn-gold" onclick="generateHTML()" id="btn-generate">⚡ Gerar HTML</button>
+      <button class="btn btn-secondary" onclick="uploadAllSlices()" id="btn-upload-all">⬆ Subir todas as fatias</button>
+      <button class="btn btn-danger btn-sm" onclick="resetCampanha()">↺ Limpar</button>
+    </div>
+
+    <!-- Output -->
+    <div id="output-section" class="card" style="margin-top:22px;">
+      <div class="output-header">
+        <div class="card-title" style="margin-bottom:0;">HTML Gerado</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="copy-feedback" id="copy-feedback">✔ Copiado!</span>
+          <button class="btn btn-primary btn-sm" onclick="copyHTML()">📋 Copiar HTML</button>
+        </div>
+      </div>
+      <pre id="html-output"></pre>
+    </div>
+
+  </div><!-- /page-campanha -->
+
+  <!-- ══════════════ TAB CONFIG ══════════════ -->
+  <div class="page" id="page-config">
+
+    <div class="alert alert-info">
+      <span class="alert-icon">🔒</span>
+      <span>As credenciais são salvas <strong>apenas no seu navegador</strong> (localStorage), nunca em servidor externo. Cada computador precisa configurar uma vez.</span>
+    </div>
+
+    <!-- BUs -->
+    <div class="card">
+      <div class="card-title">Business Units</div>
+      <div class="bu-list" id="bu-config-list"></div>
+      <button class="btn btn-add" onclick="addBUConfig()" style="margin-top:12px;">＋ Adicionar Business Unit</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="saveConfig()">💾 Salvar configurações</button>
+      <button class="btn btn-secondary" onclick="testConnection()" id="btn-test-conn">🔌 Testar conexão</button>
+    </div>
+
+    <div id="test-result" style="margin-top:14px; display:none;"></div>
+
+  </div><!-- /page-config -->
+
+</div><!-- /container -->
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+const SUBDOMAIN = 'mcdr998fk605k8c51p7t-gc781ly';
+let config = { bus: [] };
+let currentBU = null;
+let sliceCount = 0;
+let dragSrc = null;
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+function init() {
+  const saved = localStorage.getItem('ultrablue_config');
+  if (saved) {
+    try { config = JSON.parse(saved); } catch(e) {}
+  }
+  renderBUConfig();
+  updateHeaderBU();
+}
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['campanha','config'][i] === tab);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${tab}`).classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// BU MODAL
+// ═══════════════════════════════════════
+let tempSelectedBU = null;
+
+function openBUModal() {
+  if (!config.bus.length) {
+    alert('Nenhuma BU configurada. Vá em Configurações para adicionar.');
+    switchTab('config'); return;
+  }
+  tempSelectedBU = currentBU ? currentBU.mid : null;
+  const list = document.getElementById('bu-options-list');
+  list.innerHTML = config.bus.map(bu => `
+    <div class="bu-option ${tempSelectedBU === bu.mid ? 'selected' : ''}" onclick="selectBUOption('${bu.mid}')" data-mid="${bu.mid}">
+      <div class="bu-option-icon">${bu.name.charAt(0)}</div>
+      <div class="bu-option-info">
+        <div class="bu-option-name">${bu.name}</div>
+        <div class="bu-option-mid">MID: ${bu.mid || 'não definido'}</div>
+      </div>
+      <span class="bu-option-check">✓</span>
+    </div>
+  `).join('');
+  document.getElementById('bu-modal').classList.add('open');
+}
+
+function selectBUOption(mid) {
+  tempSelectedBU = mid;
+  document.querySelectorAll('.bu-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.mid === mid);
+  });
+}
+
+function confirmBU() {
+  if (!tempSelectedBU) { alert('Selecione uma BU.'); return; }
+  currentBU = config.bus.find(b => b.mid === tempSelectedBU);
+  updateHeaderBU();
+  populateFooterFromBU();
+  closeBUModal();
+  document.getElementById('no-bu-alert').style.display = 'none';
+}
+
+function populateFooterFromBU() {
+  if (!currentBU) return;
+  syncFooterCode();
+}
+
+function closeBUModal() {
+  document.getElementById('bu-modal').classList.remove('open');
+}
+
+function updateHeaderBU() {
+  const dot = document.getElementById('header-bu-dot');
+  const name = document.getElementById('header-bu-name');
+  if (currentBU) {
+    dot.className = 'bu-dot';
+    name.textContent = currentBU.name;
+  } else {
+    dot.className = 'bu-dot inactive';
+    name.textContent = 'Selecionar BU';
+  }
+}
+
+// ═══════════════════════════════════════
+// CONFIG — BUs
+// ═══════════════════════════════════════
+function renderBUConfig() {
+  const list = document.getElementById('bu-config-list');
+  if (!config.bus.length) {
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">Nenhuma BU configurada ainda.</div>';
+    return;
+  }
+  list.innerHTML = config.bus.map((bu, i) => `
+    <div class="bu-item">
+      <div class="bu-item-header" onclick="toggleBUItem(${i})">
+        <div class="bu-item-header-left">
+          <span class="bu-name-badge">${bu.name || 'BU ' + (i+1)}</span>
+          <span class="bu-item-mid">${bu.mid ? 'MID: ' + bu.mid : 'MID não definido'}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="bu-status ${bu.clientId && bu.clientSecret ? 'ok' : 'pending'}">${bu.clientId && bu.clientSecret ? '✓ Configurado' : '⚠ Incompleto'}</span>
+          <button class="btn-remove-bu" onclick="removeBU(event,${i})">✕</button>
+        </div>
+      </div>
+      <div class="bu-item-body" id="bu-body-${i}">
+        <div class="bu-fields">
+          <div class="field">
+            <label>Nome da BU</label>
+            <input type="text" value="${bu.name || ''}" oninput="updateBU(${i},'name',this.value)" placeholder="Ex: Ultrablue BTG">
+          </div>
+          <div class="field">
+            <label>MID da BU</label>
+            <input type="text" value="${bu.mid || ''}" oninput="updateBU(${i},'mid',this.value)" placeholder="Ex: 1234567">
+          </div>
+          <div class="field">
+            <label>Client ID</label>
+            <input type="text" value="${bu.clientId || ''}" oninput="updateBU(${i},'clientId',this.value)" placeholder="Client ID do Installed Package">
+          </div>
+          <div class="field">
+            <label>Client Secret</label>
+            <input type="password" value="${bu.clientSecret || ''}" oninput="updateBU(${i},'clientSecret',this.value)" placeholder="Client Secret">
+          </div>
+          <div class="field full">
+            <label>Pasta no Content Builder (opcional)</label>
+            <input type="text" value="${bu.folder || ''}" oninput="updateBU(${i},'folder',this.value)" placeholder="Ex: Newsletters/Ultrablue">
+          </div>
+          <div class="field">
+            <label>Telefone de atendimento</label>
+            <input type="text" value="${bu.phone || ''}" oninput="updateBU(${i},'phone',this.value)" placeholder="Ex: 11 4862-1688">
+          </div>
+          <div class="field">
+            <label>E-mail de contato (fixo)</label>
+            <input type="text" value="${bu.email || ''}" oninput="updateBU(${i},'email',this.value)" placeholder="Ex: ultrablue@primetour.com.br">
+          </div>
+          <div class="field full">
+            <label>URL do logotipo</label>
+            <input type="text" value="${bu.logo || ''}" oninput="updateBU(${i},'logo',this.value)" placeholder="https://...logo.png">
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleBUItem(i) {
+  const body = document.getElementById(`bu-body-${i}`);
+  body.classList.toggle('open');
+}
+
+function addBUConfig() {
+  config.bus.push({ name: '', mid: '', clientId: '', clientSecret: '', folder: '' });
+  renderBUConfig();
+  // Open the new one
+  setTimeout(() => {
+    const body = document.getElementById(`bu-body-${config.bus.length - 1}`);
+    if (body) body.classList.add('open');
+  }, 50);
+}
+
+function updateBU(i, field, value) {
+  config.bus[i][field] = value;
+}
+
+function removeBU(e, i) {
+  e.stopPropagation();
+  if (!confirm('Remover esta BU?')) return;
+  config.bus.splice(i, 1);
+  if (currentBU && !config.bus.find(b => b.mid === currentBU.mid)) {
+    currentBU = null; updateHeaderBU();
+  }
+  renderBUConfig();
+}
+
+function saveConfig() {
+  localStorage.setItem('ultrablue_config', JSON.stringify(config));
+  const btn = document.querySelector('[onclick="saveConfig()"]');
+  btn.textContent = '✔ Salvo!';
+  setTimeout(() => btn.innerHTML = '💾 Salvar configurações', 2000);
+}
+
+// ═══════════════════════════════════════
+// SFMC AUTH
+// ═══════════════════════════════════════
+async function getAccessToken(bu) {
+  const resp = await fetch(`https://${SUBDOMAIN}.auth.marketingcloudapis.com/v2/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: bu.clientId,
+      client_secret: bu.clientSecret,
+      ...(bu.mid ? { account_id: bu.mid } : {})
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Erro de autenticação (${resp.status}): ${err}`);
+  }
+  const data = await resp.json();
+  return data.access_token;
+}
+
+// ═══════════════════════════════════════
+// TEST CONNECTION
+// ═══════════════════════════════════════
+async function testConnection() {
+  if (!currentBU) { alert('Selecione uma BU primeiro.'); return; }
+  const btn = document.getElementById('btn-test-conn');
+  const result = document.getElementById('test-result');
+  btn.innerHTML = '<span class="spinner spinner-blue"></span> Testando...';
+  btn.disabled = true;
+  result.style.display = 'none';
+  try {
+    await getAccessToken(currentBU);
+    result.innerHTML = `<div class="alert alert-success"><span class="alert-icon">✅</span><span>Conexão com a BU <strong>${currentBU.name}</strong> bem-sucedida! Credenciais válidas.</span></div>`;
+  } catch(e) {
+    result.innerHTML = `<div class="alert alert-danger"><span class="alert-icon">❌</span><span>${e.message}</span></div>`;
+  } finally {
+    result.style.display = 'block';
+    btn.innerHTML = '🔌 Testar conexão';
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════
+// UPLOAD IMAGE TO CONTENT BUILDER
+// ═══════════════════════════════════════
+async function uploadImageToContentBuilder(bu, file, campaignCode) {
+  const token = await getAccessToken(bu);
+
+  // Convert to base64
+  const base64 = await fileToBase64(file);
+  const base64Data = base64.split(',')[1];
+
+  const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const folder = bu.folder || 'Newsletters';
+
+  const payload = {
+    name: campaignCode ? `${campaignCode}_${filename}` : filename,
+    assetType: { name: 'jpg', id: 23 },
+    file: base64Data,
+    fileProperties: { extension: 'jpg' }
+  };
+
+  const resp = await fetch(`https://${SUBDOMAIN}.rest.marketingcloudapis.com/asset/v1/content/assets`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Upload falhou (${resp.status}): ${err}`);
+  }
+
+  const data = await resp.json();
+  // Return the public file URL
+  return data.fileProperties?.publishedURL || data.thumbnail?.thumbnailUrl || '';
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(new Error('Erro ao ler arquivo'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════════
+// SLICES
+// ═══════════════════════════════════════
+function addSlice(data = {}) {
+  sliceCount++;
+  const id = sliceCount;
+  const container = document.getElementById('slices-container');
+  const div = document.createElement('div');
+  div.className = 'slice-card';
+  div.dataset.id = id;
+  div.dataset.type = data.type || 'decorative';
+  div.draggable = true;
+
+  div.innerHTML = `
+    <div class="slice-header" onclick="toggleSlice(${id})">
+      <div class="slice-header-left">
+        <span class="drag-handle" draggable="false">⠿</span>
+        <span class="slice-number">${id}</span>
+        <span class="slice-label">Fatia ${id}</span>
+        <span class="slice-type-badge badge-decorative" id="badge-${id}">Decorativa</span>
+        <span class="slice-upload-status" id="upload-status-${id}"></span>
+      </div>
+      <div class="slice-header-right">
+        <button class="btn-remove-slice" onclick="removeSlice(event,${id})" title="Remover">✕</button>
+        <span class="chevron">▾</span>
+      </div>
+    </div>
+    <div class="slice-body">
+
+      <!-- File upload zone -->
+      <div class="field full">
+        <label>Arquivo da fatia (JPG)</label>
+        <div class="upload-zone" id="upload-zone-${id}">
+          <input type="file" accept="image/jpeg,image/jpg,image/png" onchange="handleFileSelect(${id}, this)">
+          <div class="upload-zone-text">
+            <strong>Clique ou arraste o arquivo aqui</strong>
+            JPG / PNG
+          </div>
+        </div>
+        <div id="upload-preview-${id}" style="display:none;"></div>
+      </div>
+
+      <!-- URL + upload button -->
+      <div class="field full">
+        <label>URL da imagem no Content Builder</label>
+        <div class="url-row">
+          <input type="url" id="img-${id}" placeholder="Preenchida automaticamente após upload ou cole manualmente" value="${data.img || ''}">
+          <button class="btn-upload-single" id="btn-upload-${id}" onclick="uploadSingleSlice(${id})" disabled title="Selecione um arquivo primeiro">
+            ⬆ Subir
+          </button>
+        </div>
+      </div>
+
+      <div class="field full">
+        <label>Texto alternativo (alt)</label>
+        <input type="text" id="alt-${id}" placeholder="Descrição da imagem para acessibilidade" value="${data.alt || ''}">
+      </div>
+
+      <div class="field full">
+        <label>Tipo de fatia</label>
+        <div class="type-selector">
+          <button class="type-btn active-decorative" id="btn-dec-${id}" onclick="setType(${id},'decorative')">🎨 Decorativa</button>
+          <button class="type-btn" id="btn-whats-${id}" onclick="setType(${id},'whatsapp')">💬 CTA WhatsApp</button>
+        </div>
+      </div>
+
+      <div class="link-fields" id="link-fields-${id}">
+        <div class="field full" id="whats-field-${id}" style="display:none;">
+          <label>Número WhatsApp (com DDI, sem espaços ou +)</label>
+          <input type="text" id="whats-num-${id}" placeholder="5511XXXXXXXXX" value="${data.whatsNum || ''}">
+        </div>
+        <div class="field full" id="whats-msg-field-${id}" style="display:none;">
+          <label>Mensagem WhatsApp</label>
+          <input type="text" id="whats-msg-${id}" placeholder="Ultrablue BTG Pactual: Nome da campanha — Código UXXXX" value="${data.whatsMsg || ''}">
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  div.addEventListener('dragstart', e => { dragSrc = div; div.classList.add('dragging'); });
+  div.addEventListener('dragend', () => div.classList.remove('dragging'));
+  div.addEventListener('dragover', e => e.preventDefault());
+  div.addEventListener('drop', e => {
+    e.preventDefault();
+    if (dragSrc && dragSrc !== div) {
+      const all = [...container.children];
+      const si = all.indexOf(dragSrc), ti = all.indexOf(div);
+      if (si < ti) container.insertBefore(dragSrc, div.nextSibling);
+      else container.insertBefore(dragSrc, div);
+      renumberSlices();
+    }
+  });
+
+  container.appendChild(div);
+  if (data.type) setType(id, data.type);
+}
+
+function handleFileSelect(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Store file reference on the element
+  document.getElementById(`upload-zone-${id}`).dataset.file = '';
+  document.querySelector(`#upload-zone-${id} input`).__file = file;
+
+  // Show preview
+  const previewEl = document.getElementById(`upload-preview-${id}`);
+  const zoneEl = document.getElementById(`upload-zone-${id}`);
+  const objUrl = URL.createObjectURL(file);
+  previewEl.innerHTML = `
+    <div class="upload-preview">
+      <img src="${objUrl}" alt="preview">
+      <div class="upload-preview-info">
+        <div class="upload-preview-name">${file.name}</div>
+        <div class="upload-preview-size">${(file.size / 1024).toFixed(0)} KB</div>
+      </div>
+      <button class="btn-clear-file" onclick="clearFile(${id})" title="Remover arquivo">✕</button>
+    </div>
+  `;
+  previewEl.style.display = 'block';
+  zoneEl.style.display = 'none';
+
+  // Enable upload button
+  document.getElementById(`btn-upload-${id}`).disabled = false;
+  setUploadStatus(id, '', '');
+}
+
+function clearFile(id) {
+  document.getElementById(`upload-preview-${id}`).style.display = 'none';
+  document.getElementById(`upload-zone-${id}`).style.display = 'block';
+  const fileInput = document.querySelector(`#upload-zone-${id} input`);
+  fileInput.value = '';
+  fileInput.__file = null;
+  document.getElementById(`btn-upload-${id}`).disabled = true;
+  document.getElementById(`img-${id}`).value = '';
+  setUploadStatus(id, '', '');
+}
+
+function setUploadStatus(id, text, cls) {
+  const el = document.getElementById(`upload-status-${id}`);
+  el.textContent = text;
+  el.className = `slice-upload-status ${cls}`;
+}
+
+async function uploadSingleSlice(id) {
+  if (!currentBU) { alert('Selecione uma BU primeiro.'); return; }
+  const fileInput = document.querySelector(`#upload-zone-${id} input`);
+  const file = fileInput.__file;
+  if (!file) { alert('Selecione um arquivo primeiro.'); return; }
+
+  const btn = document.getElementById(`btn-upload-${id}`);
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  setUploadStatus(id, 'Enviando...', 'status-uploading');
+
+  const campaignCode = document.getElementById('campaign-code').value.trim();
+  try {
+    const url = await uploadImageToContentBuilder(currentBU, file, campaignCode);
+    document.getElementById(`img-${id}`).value = url;
+    setUploadStatus(id, '✓ Upload concluído', 'status-uploaded');
+    btn.innerHTML = '✓ Enviado';
+  } catch(e) {
+    setUploadStatus(id, '✕ Erro no upload', 'status-error');
+    btn.innerHTML = '⬆ Tentar novamente';
+    btn.disabled = false;
+    alert(`Erro ao fazer upload da fatia ${id}:\n${e.message}`);
+  }
+}
+
+async function uploadAllSlices() {
+  if (!currentBU) { alert('Selecione uma BU primeiro.'); return; }
+  const cards = document.querySelectorAll('.slice-card');
+  let count = 0;
+  for (const card of cards) {
+    const id = card.dataset.id;
+    const fileInput = document.querySelector(`#upload-zone-${id} input`);
+    if (fileInput && fileInput.__file && !document.getElementById(`img-${id}`).value) {
+      await uploadSingleSlice(id);
+      count++;
+    }
+  }
+  if (count === 0) alert('Nenhuma fatia nova com arquivo selecionado encontrada.');
+}
+
+function toggleSlice(id) {
+  document.querySelector(`.slice-card[data-id="${id}"]`).classList.toggle('collapsed');
+}
+
+function removeSlice(e, id) {
+  e.stopPropagation();
+  document.querySelector(`.slice-card[data-id="${id}"]`).remove();
+  renumberSlices();
+}
+
+function renumberSlices() {
+  document.querySelectorAll('.slice-card').forEach((card, i) => {
+    card.querySelector('.slice-number').textContent = i + 1;
+    card.querySelector('.slice-label').textContent = `Fatia ${i + 1}`;
+  });
+}
+
+function setType(id, type) {
+  const badge = document.getElementById(`badge-${id}`);
+  const linkFields = document.getElementById(`link-fields-${id}`);
+  ['whats-field','whats-msg-field'].forEach(f => {
+    const el = document.getElementById(`${f}-${id}`);
+    if (el) el.style.display = 'none';
+  });
+  linkFields.classList.remove('visible');
+  document.getElementById(`btn-dec-${id}`).className = 'type-btn';
+  document.getElementById(`btn-whats-${id}`).className = 'type-btn';
+
+  if (type === 'decorative') {
+    document.getElementById(`btn-dec-${id}`).className = 'type-btn active-decorative';
+    badge.className = 'slice-type-badge badge-decorative'; badge.textContent = 'Decorativa';
+  } else if (type === 'whatsapp') {
+    document.getElementById(`btn-whats-${id}`).className = 'type-btn active-whatsapp';
+    badge.className = 'slice-type-badge badge-cta-whats'; badge.textContent = 'CTA WhatsApp';
+    linkFields.classList.add('visible');
+    document.getElementById(`whats-field-${id}`).style.display = 'flex';
+    document.getElementById(`whats-msg-field-${id}`).style.display = 'flex';
+  }
+  document.querySelector(`.slice-card[data-id="${id}"]`).dataset.type = type;
+}
+
+// ═══════════════════════════════════════
+// GENERATE HTML
+// ═══════════════════════════════════════
+function syncFooterCode() {
+  const code = document.getElementById('campaign-code').value.trim();
+  const name = document.getElementById('campaign-name').value.trim();
+  document.getElementById('footer-code').value = code;
+  const email = currentBU?.email || '';
+  const subj = name ? `Ultrablue BTG Pactual: ${name}` : '';
+  document.getElementById('footer-mailto-preview').value = email && subj ? `mailto:${email}?subject=${subj}` : '';
+}
+
+function generateHTML() {
+  const campaignCode = document.getElementById('campaign-code').value.trim();
+  const campaignName = document.getElementById('campaign-name').value.trim();
+  const footerCode = document.getElementById('footer-code').value.trim() || campaignCode;
+  const footerLegal = document.getElementById('footer-legal').value.trim();
+
+  // Fixed per BU
+  const footerPhone = currentBU?.phone || '';
+  const footerEmail = currentBU?.email || '';
+  const footerLogo = currentBU?.logo || '';
+
+  const cards = document.querySelectorAll('.slice-card');
+  if (!cards.length) { alert('Adicione pelo menos uma fatia.'); return; }
+
+  let slicesHTML = '';
+  cards.forEach(card => {
+    const id = card.dataset.id;
+    const type = card.dataset.type || 'decorative';
+    const imgSrc = document.getElementById(`img-${id}`)?.value.trim() || '';
+    const altText = document.getElementById(`alt-${id}`)?.value.trim() || '';
+    const tdOpen = `  <tr>\n    <td style="font-size:0; line-height:0; mso-line-height-rule:exactly; padding:0; margin:0;">`;
+    const tdClose = `    </td>\n  </tr>`;
+    const imgTag = `      <img src="${imgSrc}" width="600" height="auto" alt="${altText}" style="display:block; width:600px; height:auto; max-width:100%;">`;
+
+    if (type === 'decorative') {
+      slicesHTML += `${tdOpen}\n${imgTag}\n${tdClose}\n\n`;
+    } else if (type === 'whatsapp') {
+      const num = document.getElementById(`whats-num-${id}`)?.value.trim() || '';
+      const msg = document.getElementById(`whats-msg-${id}`)?.value.trim() || '';
+      const href = `https://api.whatsapp.com/send?phone=${encodeURIComponent(num)}&text=${encodeURIComponent(msg)}`;
+      slicesHTML += `${tdOpen}\n      <a href="${href}" target="_blank" style="display:block;">\n${imgTag}\n      </a>\n${tdClose}\n\n`;
+    }
+  });
+
+  const footerMailtoSubj = campaignName ? encodeURIComponent(`Ultrablue BTG Pactual: ${campaignName}`) : '';
+  const footerMailtoHref = `mailto:${footerEmail}${footerMailtoSubj ? '?subject=' + footerMailtoSubj : ''}`;
+
+  const html = `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ultrablue BTG Pactual${campaignName ? ' — ' + campaignName : ''}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{ margin:0; padding:0; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; font-family:'Montserrat', Arial, sans-serif; background-color:#ffffff !important; color:#000000; }
+    table{ border-spacing:0; border-collapse:collapse; }
+    img{ display:block; border:0; line-height:100%; outline:none; text-decoration:none; }
+    a{ color:inherit; text-decoration:none; }
+    :root { color-scheme: light; supported-color-schemes: light; }
+    @media only screen and (max-width:620px){
+      .main{ width:100% !important; }
+      .full-img{ width:100% !important; height:auto !important; }
+      .stack{ display:block !important; width:100% !important; }
+      .padding-sm{ padding:12px !important; }
+      .center{ text-align:center !important; }
+    }
+  </style>
+</head>
+<body>
+
+<table width="600" border="0" align="center" cellpadding="0" cellspacing="0" id="Tabela_01" style="border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt;">
+
+${slicesHTML}  <!-- Rodapé -->
+  <tr>
+    <td style="background-color:#ffffff !important; padding:0; margin:0;">
+      <table width="600" align="center" cellpadding="0" cellspacing="0" border="0" style="width:600px; background-color:#ffffff !important; color:#000000; font-size:13px; line-height:20px; border-collapse:collapse;">
+        <tr>
+          <td style="padding:30px 30px 10px 30px; background-color:#ffffff !important; color:#000000;">
+            <table align="center" width="260" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff !important;">
+              <tr>
+                <td align="center" style="padding-bottom:15px; background-color:#ffffff !important;">
+                  <img src="${footerLogo}" alt="BTG Pactual" width="120" style="display:block; margin:0 auto;">
+                </td>
+              </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff !important;">
+              <tr>
+                <td class="stack" width="50%" valign="top" style="color:#000000;">
+                  <strong style="color:#10408d;">Fale Conosco</strong><br><br>
+                  Atendimento <strong>Viagens e Concierge Ultrablue BTG Pactual</strong><br>
+                  de segunda a sexta-feira,<br> das 08h às 20h (exceto feriados)<br><br>
+                  <strong>${footerPhone}</strong> — Utilize o código<br>
+                  <strong>${footerCode}</strong><br><br>
+                  Se preferir, envie um e-mail para:<br>
+                  <strong><a href="${footerMailtoHref}" style="color:#10408d; text-decoration:none;">${footerEmail}</a></strong>
+                </td>
+                <td class="stack" width="50%" valign="top" style="color:#000000;">
+                  <strong style="color:#10408d;">SAC - 24h</strong><br><br>
+                  <strong>0800-772-2827<br>0800-044-4335</strong>
+                  <span style="font-size:12px; color:#000000;"><br>Deficiência Auditiva ou de Fala</span><br><br>
+                  <strong style="color:#10408d;">Ouvidoria</strong><br>
+                  0800-722-0048<br>
+                  Das 9h às 18h de segunda a sexta-feira,<br>
+                  exceto feriados
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px 30px 30px 30px; font-size:11px; line-height:16px; color:#000000; background-color:#ffffff !important; text-align:justify;">
+            ${footerLegal}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+</table>
+
+<custom name="opencounter" type="tracking"/>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td align="center">
+      <a href="%%unsub_center_url%%" alias="Unsubscribe">
+        Caso não queira mais receber nossos e-mails, clique aqui
+      </a>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>`;
+
+  document.getElementById('html-output').textContent = html;
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyHTML() {
+  const text = document.getElementById('html-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const fb = document.getElementById('copy-feedback');
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 2500);
+  });
+}
+
+function resetCampanha() {
+  if (!confirm('Limpar todas as fatias e dados da campanha?')) return;
+  document.getElementById('slices-container').innerHTML = '';
+  document.getElementById('campaign-code').value = '';
+  document.getElementById('campaign-name').value = '';
+  document.getElementById('footer-code').value = '';
+  document.getElementById('footer-mailto-preview').value = '';
+  document.getElementById('output-section').style.display = 'none';
+  sliceCount = 0;
+}
+
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+init();
+addSlice({ type: 'decorative' });
+addSlice({ type: 'whatsapp' });
+addSlice({ type: 'decorative' });
+</script>
+</body>
+</html>
