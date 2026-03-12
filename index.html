@@ -651,15 +651,29 @@ function syncFooter() {
 }
 
 // ═══════════════════════════════
-// SFMC AUTH + UPLOAD
+// SFMC AUTH + UPLOAD (via proxy)
 // ═══════════════════════════════
-async function getAccessToken(bu) {
-  const resp = await fetch(`https://${SUBDOMAIN}.auth.marketingcloudapis.com/v2/token`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type:'client_credentials', client_id:bu.clientId, client_secret:bu.clientSecret, ...(bu.mid ? {account_id:bu.mid} : {}) })
+const PROXY_URL = 'https://sfmcproxy.tiagosmithprado.workers.dev/';
+
+async function proxyFetch(url, method, headers, payload) {
+  const resp = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, method, headers, payload })
   });
-  if (!resp.ok) throw new Error(`Erro de autenticação (${resp.status}): ${await resp.text()}`);
-  return (await resp.json()).access_token;
+  if (!resp.ok) throw new Error(`Erro no proxy (${resp.status}): ${await resp.text()}`);
+  return resp.json();
+}
+
+async function getAccessToken(bu) {
+  const data = await proxyFetch(
+    `https://${SUBDOMAIN}.auth.marketingcloudapis.com/v2/token`,
+    'POST',
+    { 'Content-Type': 'application/json' },
+    { grant_type: 'client_credentials', client_id: bu.clientId, client_secret: bu.clientSecret, ...(bu.mid ? { account_id: bu.mid } : {}) }
+  );
+  if (!data.access_token) throw new Error(`Autenticação falhou: ${JSON.stringify(data)}`);
+  return data.access_token;
 }
 
 async function uploadImageToContentBuilder(bu, file, campaignCode) {
@@ -667,11 +681,13 @@ async function uploadImageToContentBuilder(bu, file, campaignCode) {
   const base64Data = (await fileToBase64(file)).split(',')[1];
   const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const payload = { name: campaignCode ? `${campaignCode}_${filename}` : filename, assetType:{name:'jpg',id:23}, file:base64Data, fileProperties:{extension:'jpg'} };
-  const resp = await fetch(`https://${SUBDOMAIN}.rest.marketingcloudapis.com/asset/v1/content/assets`, {
-    method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}, body:JSON.stringify(payload)
-  });
-  if (!resp.ok) throw new Error(`Upload falhou (${resp.status}): ${await resp.text()}`);
-  const data = await resp.json();
+  const data = await proxyFetch(
+    `https://${SUBDOMAIN}.rest.marketingcloudapis.com/asset/v1/content/assets`,
+    'POST',
+    { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    payload
+  );
+  if (!data.fileProperties?.publishedURL && !data.thumbnail?.thumbnailUrl) throw new Error(`Upload falhou: ${JSON.stringify(data)}`);
   return data.fileProperties?.publishedURL || data.thumbnail?.thumbnailUrl || '';
 }
 
